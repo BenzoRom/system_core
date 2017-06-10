@@ -1020,6 +1020,16 @@ static Result<Success> do_installkey(const BuiltinArguments& args) {
         {{"exec", "/system/bin/vdc", "--wait", "cryptfs", "enablefilecrypto"}, args.context});
 }
 
+static Result<Success> do_install_keyring(const BuiltinArguments& args) {
+    if (e4crypt_install_keyring()) {
+        PLOG(ERROR) << "Failed to install keyring";
+        return Error() << "Failed to install keyring";
+    }
+    property_set("ro.crypto.state", "encrypted");
+    property_set("ro.crypto.type", "file");
+    return Success();
+}
+
 static Result<Success> do_init_user0(const BuiltinArguments& args) {
     return ExecWithRebootOnFailure(
         "init_user0_failed",
@@ -1049,6 +1059,7 @@ const BuiltinFunctionMap::Map& BuiltinFunctionMap::map() const {
         {"ifup",                    {1,     1,    {true,   do_ifup}}},
         {"init_user0",              {0,     0,    {false,  do_init_user0}}},
         {"insmod",                  {1,     kMax, {true,   do_insmod}}},
+        {"install_keyring",         {0,     0,    {false,  do_install_keyring}}},
         {"installkey",              {1,     1,    {false,  do_installkey}}},
         {"load_persist_props",      {0,     0,    {false,  do_load_persist_props}}},
         {"load_system_props",       {0,     0,    {false,  do_load_system_props}}},
