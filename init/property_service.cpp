@@ -56,6 +56,7 @@
 #include "init.h"
 #include "util.h"
 
+using android::base::StartsWith;
 using android::base::Timer;
 
 #define PERSISTENT_PROPERTY_DIR  "/data/property"
@@ -174,7 +175,7 @@ static uint32_t PropertySetImpl(const std::string& name, const std::string& valu
         return PROP_ERROR_INVALID_NAME;
     }
 
-    if (valuelen >= PROP_VALUE_MAX) {
+    if (valuelen >= PROP_VALUE_MAX && !StartsWith(name, "ro.")) {
         LOG(ERROR) << "property_set(\"" << name << "\", \"" << value << "\") failed: "
                    << "value too long";
         return PROP_ERROR_INVALID_VALUE;
@@ -183,7 +184,7 @@ static uint32_t PropertySetImpl(const std::string& name, const std::string& valu
     prop_info* pi = (prop_info*) __system_property_find(name.c_str());
     if (pi != nullptr) {
         // ro.* properties are actually "write-once".
-        if (android::base::StartsWith(name, "ro.")) {
+        if (StartsWith(name, "ro.")) {
             LOG(ERROR) << "property_set(\"" << name << "\", \"" << value << "\") failed: "
                        << "property already set";
             return PROP_ERROR_READ_ONLY_PROPERTY;
@@ -201,7 +202,7 @@ static uint32_t PropertySetImpl(const std::string& name, const std::string& valu
 
     // Don't write properties to disk until after we have read all default
     // properties to prevent them from being overwritten by default values.
-    if (persistent_properties_loaded && android::base::StartsWith(name, "persist.")) {
+    if (persistent_properties_loaded && StartsWith(name, "persist.")) {
         write_persistent_property(name.c_str(), value.c_str());
     }
     property_changed(name, value);
@@ -422,7 +423,7 @@ static void handle_property_set(SocketConnection& socket,
   char* source_ctx = nullptr;
   getpeercon(socket.socket(), &source_ctx);
 
-  if (android::base::StartsWith(name, "ctl.")) {
+  if (StartsWith(name, "ctl.")) {
     if (check_control_mac_perms(value.c_str(), source_ctx, &cr)) {
       handle_control_message(name.c_str() + 4, value.c_str());
       if (!legacy_protocol) {

@@ -33,12 +33,12 @@
 #include <string>
 
 #include <android-base/file.h>
+#include <android-base/properties.h>
 #include <android-base/stringprintf.h>
 #include <android-base/unique_fd.h>
 #include <android/log.h>
 #include <backtrace/Backtrace.h>
 #include <backtrace/BacktraceMap.h>
-#include <cutils/properties.h>
 #include <log/log.h>
 #include <log/logprint.h>
 #include <private/android_filesystem_config.h>
@@ -51,6 +51,8 @@
 #include "open_files_list.h"
 #include "tombstone.h"
 
+using android::base::GetBoolProperty;
+using android::base::GetProperty;
 using android::base::StringPrintf;
 
 #define STACK_WORDS 16
@@ -208,14 +210,11 @@ static const char* get_sigcode(int signo, int code) {
 }
 
 static void dump_header_info(log_t* log) {
-  char fingerprint[PROPERTY_VALUE_MAX];
-  char revision[PROPERTY_VALUE_MAX];
+  auto fingerprint = GetProperty("ro.build.fingerprint", "unknown");
+  auto revision = GetProperty("ro.revision", "unknown");
 
-  property_get("ro.build.fingerprint", fingerprint, "unknown");
-  property_get("ro.revision", revision, "unknown");
-
-  _LOG(log, logtype::HEADER, "Build fingerprint: '%s'\n", fingerprint);
-  _LOG(log, logtype::HEADER, "Revision: '%s'\n", revision);
+  _LOG(log, logtype::HEADER, "Build fingerprint: '%s'\n", fingerprint.c_str());
+  _LOG(log, logtype::HEADER, "Revision: '%s'\n", revision.c_str());
   _LOG(log, logtype::HEADER, "ABI: '%s'\n", ABI_STRING);
 }
 
@@ -663,9 +662,7 @@ static void dump_crash(log_t* log, BacktraceMap* map, const OpenFilesList* open_
                        pid_t tid, const std::string& process_name,
                        const std::map<pid_t, std::string>& threads, uintptr_t abort_msg_address) {
   // don't copy log messages to tombstone unless this is a dev device
-  char value[PROPERTY_VALUE_MAX];
-  property_get("ro.debuggable", value, "0");
-  bool want_logs = (value[0] == '1');
+  bool want_logs = GetBoolProperty("ro.debuggable", false);
 
   _LOG(log, logtype::HEADER,
        "*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
