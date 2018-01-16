@@ -5,6 +5,8 @@ cc_defaults {
         "-Wextra",
         "-Werror",
         "-Wno-nullability-completeness",
+        "-Wno-tautological-type-limit-compare",
+        "-Wno-tautological-unsigned-enum-zero-compare",
         "-Os",
     ],
 
