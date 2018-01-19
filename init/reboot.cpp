@@ -134,25 +134,12 @@ class MountEntry {
 
 // Turn off backlight while we are performing power down cleanup activities.
 static void TurnOffBacklight() {
-    static constexpr char OFF[] = "0";
-
-    android::base::WriteStringToFile(OFF, "/sys/class/leds/lcd-backlight/brightness");
-
-    static const char backlightDir[] = "/sys/class/backlight";
-    std::unique_ptr<DIR, int (*)(DIR*)> dir(opendir(backlightDir), closedir);
-    if (!dir) {
+    Service* service = ServiceManager::GetInstance().FindServiceByName("blank_screen");
+    if (service == nullptr) {
+        LOG(WARNING) << "cannot find blank_screen in TurnOffBacklight";
         return;
     }
-
-    struct dirent* dp;
-    while ((dp = readdir(dir.get())) != nullptr) {
-        if (((dp->d_type != DT_DIR) && (dp->d_type != DT_LNK)) || (dp->d_name[0] == '.')) {
-            continue;
-        }
-
-        std::string fileName = StringPrintf("%s/%s/brightness", backlightDir, dp->d_name);
-        android::base::WriteStringToFile(OFF, fileName);
-    }
+    service->Start();
 }
 
 static void ShutdownVold() {
@@ -314,8 +301,6 @@ static UmountStat TryUmountAndFsck(bool runFsck, std::chrono::milliseconds timeo
     Timer t;
     std::vector<MountEntry> block_devices;
     std::vector<MountEntry> emulated_devices;
-    //below code move to the place before killing service
-    //TurnOffBacklight();  // this part can take time. save power.
 
     if (runFsck && !FindPartitionsToUmount(&block_devices, &emulated_devices, false)) {
         return UMOUNT_STAT_ERROR;
@@ -384,6 +369,11 @@ void DoReboot(unsigned int cmd, const std::string& reason, const std::string& re
         }
     });
 
+    // remaining operations (specifically fsck) may take a substantial duration
+    if (cmd == ANDROID_RB_POWEROFF || is_thermal_shutdown) {
+        TurnOffBacklight();
+    }
+
     Service* bootAnim = ServiceManager::GetInstance().FindServiceByName("bootanim");
     Service* surfaceFlinger = ServiceManager::GetInstance().FindServiceByName("surfaceflinger");
     if (bootAnim != nullptr && surfaceFlinger != nullptr && surfaceFlinger->IsRunning()) {
@@ -431,8 +421,6 @@ void DoReboot(unsigned int cmd, const std::string& reason, const std::string& re
         LOG(INFO) << "Terminating running services took " << t
                   << " with remaining services:" << service_count;
     }
-    //turn off backlight before killing services to avoid screen stuck
-    TurnOffBacklight();  // this part can take time. save power.
     // minimum safety steps before restarting
     // 2. kill all services except ones that are necessary for the shutdown sequence.
     ServiceManager::GetInstance().ForEachService([](Service* s) {
