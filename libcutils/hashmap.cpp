@@ -18,7 +18,7 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <cutils/threads.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
@@ -37,7 +37,7 @@ struct Hashmap {
     size_t bucketCount;
     int (*hash)(void* key);
     bool (*equals)(void* keyA, void* keyB);
-    mutex_t lock; 
+    pthread_mutex_t lock;
     size_t size;
 };
 
@@ -70,7 +70,7 @@ Hashmap* hashmapCreate(size_t initialCapacity,
     map->hash = hash;
     map->equals = equals;
     
-    mutex_init(&map->lock);
+    pthread_mutex_init(&map->lock, nullptr);
     
     return map;
 }
@@ -134,11 +134,11 @@ static void expandIfNecessary(Hashmap* map) {
 }
 
 void hashmapLock(Hashmap* map) {
-    mutex_lock(&map->lock);
+    pthread_mutex_lock(&map->lock);
 }
 
 void hashmapUnlock(Hashmap* map) {
-    mutex_unlock(&map->lock);
+    pthread_mutex_unlock(&map->lock);
 }
 
 void hashmapFree(Hashmap* map) {
@@ -152,7 +152,7 @@ void hashmapFree(Hashmap* map) {
         }
     }
     free(map->buckets);
-    mutex_destroy(&map->lock);
+    pthread_mutex_destroy(&map->lock);
     free(map);
 }
 
