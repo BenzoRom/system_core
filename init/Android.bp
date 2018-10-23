@@ -61,6 +61,7 @@ cc_defaults {
     static_libs: [
         "libbootloader_message",
         "libfs_mgr",
+        "libfscrypt",
         "libfec",
         "libfec_rs",
         "libhidl-gen-utils",

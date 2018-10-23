@@ -59,6 +59,7 @@ LOCAL_STATIC_LIBRARIES := \
     libsquashfs_utils \
     liblogwrap \
     libext4_utils \
+    libfscrypt \
     libcutils \
     libbase \
     libc \
