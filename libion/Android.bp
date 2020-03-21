@@ -15,6 +15,7 @@ cc_library {
         "include",
         "kernel-headers",
     ],
+    cflags: ["-Wno-pointer-to-int-cast"],
 }
 
 cc_binary {
