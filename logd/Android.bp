@@ -55,6 +55,10 @@ cc_library_static {
     export_include_dirs: ["."],
 
     cflags: ["-Werror"] + event_flag,
+
+    lto: {
+        thin: true
+    }
 }
 
 cc_binary {
@@ -78,6 +82,10 @@ cc_binary {
     ],
 
     cflags: ["-Werror"],
+
+    lto: {
+        thin: true
+    }
 }
 
 cc_binary {
