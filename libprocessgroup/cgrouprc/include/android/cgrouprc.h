@@ -70,6 +70,7 @@ __attribute__((warn_unused_result)) uint32_t ACgroupController_getVersion(const 
  */
 #define CGROUPRC_CONTROLLER_FLAG_MOUNTED 0x1
 #define CGROUPRC_CONTROLLER_FLAG_NEEDS_ACTIVATION 0x2
+#define CGROUPRC_CONTROLLER_FLAG_OPTIONAL 0x4
 
 #if __ANDROID_API__ >= __ANDROID_API_R__
 
